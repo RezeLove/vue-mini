@@ -2,7 +2,6 @@
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */
-    "include":["packages/*/src"],                        //指定需要编译文件
     // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
     // "composite": true,                                /* Enable constraints that allow a TypeScript project to be used with project references. */
     // "tsBuildInfoFile": "./.tsbuildinfo",              /* Specify the path to .tsbuildinfo incremental compilation file. */
@@ -23,9 +22,9 @@
     // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
     /* Modules */
-    "module": "commonjs", /* Specify what module code is generated. */
+    "module": "Node16", /* Specify what module code is generated. */
     "rootDir": ".", /* Specify the root folder within your source files. */
-    // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
+    "moduleResolution": "Node16",                     /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
@@ -48,7 +47,7 @@
     // "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
     // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
-    "sourceMap": false, /* Create source map files for emitted JavaScript files. */
+    "sourceMap": true, /* Create source map files for emitted JavaScript files. */
     // "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
     // "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output. */
     // "outDir": "./",                                   /* Specify an output folder for all emitted files. */
@@ -97,6 +96,13 @@
     // "allowUnreachableCode": true,                     /* Disable error reporting for unreachable code. */
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
-}
+    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
+    "baseUrl": ".",
+    "paths": {
+      "@vue/*":[
+        "packages/*/src"
+      ]
+    }
+  },
+  "include":["packages/*/src", "packages/reactivity/src/baseHandlers.ts", "packages/reactivity/src/index.ts", "packages/reactivity/src/reactive.ts"],                         // 要编译的文件src下的
+ }

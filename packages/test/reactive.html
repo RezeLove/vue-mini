@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../vue/dist/vue.js"></script>
+<body>
+    <div id="p1"></div>
+    <div id="p2"></div>
+    <div id="p3"></div>
+</body>
+<script>
+    const {reactive,effect} = Vue
+
+    const obj = reactive({
+        name:'ytx',
+        age:23
+    })
+
+    // effect(()=>{
+    //     document.getElementById('p1').innerText = obj.name
+    // })
+
+    effect(()=>{
+        document.getElementById('p2').innerText = obj.name
+        document.getElementById('p3').innerText = obj.age
+    })
+
+    // setTimeout(()=>{
+    //     obj.name='zyh'
+    // },2000)
+
+</script>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body></body>
+    <script>
+        let sem = { name: "Semlinker" }
+        let sem2 =  { name: "tom" }
+        let map = new Map()
+        map.set(sem, "map")
+        let weakmap = new WeakMap()
+        weakmap.set(sem2, "weakmap")
+        sem = null // 覆盖引用
+        sem2 = null
+    </script>
+</html>

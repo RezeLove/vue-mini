@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../vue/dist/vue.js"></script>
+<body>
+    <div id="p1"></div>
+    <div id="p2"></div>
+    <div id="p3"></div>
+</body>
+<script>
+    const {ref,effect} = Vue
+
+    const obj = ref('张三')
+
+    effect(()=>{
+        document.getElementById('p1').innerText = obj.value
+    })
+
+    setTimeout(()=>{
+        obj.value='李四'
+    },2000)
+
+</script>
+</html>
