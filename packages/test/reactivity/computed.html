@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../vue/dist/vue.js"></script>
+<body>
+    <div id="p1"></div>
+</body>
+<script>
+    const {computed,effect,ref} = Vue
+    let name = ref("txss")
+    const context = computed(()=>{
+        return '名字是' + name.value
+    })
+    effect(()=>{
+        // 执行完这段后，dirty为false  activeEffect=ComputedRefImpl
+        document.getElementById('p1').innerText = context.value
+        // 在执行此处时，把ComputedRefImpl收集进了dep中 并且由于dirty为false，并没有进判断
+        document.getElementById('p1').innerText = context.value
+
+        // 到此为止执行完了 dep中本来存在的函数（getter),
+        // 因为dep有了新内容，dep会继续执行ComputedRefImpl
+        // 但由于ComputedRefImpl在后面，如果先执行getter，此时dirty是false，那么再执行ComputedRefImpl时，又再scheduler中触发了trigger进入死循环
+    })
+    setTimeout(()=>{
+        name.value='李四'
+    },2000)
+
+</script>
+</html>

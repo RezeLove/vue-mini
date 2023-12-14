@@ -1,1 +1,5 @@
-export { reactive, effect, ref } from "@vue/reactivity"
+export { render } from "@vue/runtime-dom"
+export { reactive, effect, ref, computed } from "@vue/reactivity"
+export { queuePreFlushCb } from "@vue/runtime-core"
+export { watch, h, Text, Fragment, Comment } from "@vue/runtime-core"
+export { compile } from "@vue/complier-core"

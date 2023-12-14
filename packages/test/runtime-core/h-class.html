@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const {h} = Vue
+    const classObj={
+        class:{
+        'blue':true,
+        'red':true
+    }}
+    const classArray = {class:['blue','red']}
+    const vnode1 = h('div',classObj)
+    const vnode2 =h('div',classArray)
+    console.log(vnode1)
+    console.log(vnode2)
+</script>
+</html>

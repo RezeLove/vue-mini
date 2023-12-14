@@ -1,83 +1,40 @@
-// // Object.defineProperty
-// let info  = {
-//     name:'tx',
-//     age:23
-// }
-// const obj = {
-//     id:1,
-//     info:info
-// }
+// const match= /^<\/?([a-z][^\r\n\t\f />]*)/i.exec('<div>')
+// console.log(match)
 
-// Object.defineProperty(obj,'info',{
-//     set:(newval)=>{
-//         console.log('set')
-//         info = newval
-//     },
-//     get:()=>{
-//         console.log('get')
-//         return info
-//     }
-// })
-// obj.info.time=22
-// console.log('----')
-// obj.info = {
-//     name:'tx',
-//     age:23,
-//     new:1
-// }
+const match = /[a-z]/i.test("div>")
+console.log(match)
 
-// proxy
-// const origin = {
-//     name:'ytx',
-//     age:'23',
-//     count:10,
-//     price:5
-// }
-
-// const proxy = new Proxy(origin,{
-//     // 通过代理对象才可以触发set和get
-//     set(target,key,value,recevier){
-//         console.log('setter')
-//         target[key] = value
-//         // 被代理对象，key,新值,代理对象
-//         console.log(target,key,value,recevier)
-//         return true
-//     },
-//     get(target,key,recevier){
-//         console.log('getter')
-//         console.log(target,key,recevier)
-//     }
-// })
-
-// proxy.new='adder'
-
-// reflect
-// const obj = {
-//     firstname:'张',
-//     lastname:'三',
-//     // 加了get再调用时不需要再加()
-//     get fullname(){
-//         return this.firstname+this.lastname;
-//     }
-// }
-
-// const proxy = new Proxy(obj,{
-//     get(target,key,receiver){
-//         console.log('getter')
-//         // 返回target[key],将target的this绑定为receiver
-//         Reflect.get(target, key, receiver)
-//         // return target[key]
-//     }
-// })
-
-// proxy.fullname
-
-let obj = {name:'tx'}
-
-let obj2= {name:'yh'}
-let set = new Set()
-set.add(obj)
-set.add(obj2)
-obj=null
-console.log(set)
-
+const phone = [
+    {
+        name: "信息学部一教手机存放点",
+        location: [30.525782, 114.361214],
+    },
+    {
+        name: "信息学部二教手机存放点",
+        location: [30.526292, 114.361794],
+    },
+    {
+        name: "文理学部五教手机存放点",
+        location: [30.53589, 114.362339],
+    },
+    {
+        name: "文理学部四教手机存放点",
+        location: [30.536509, 114.360817],
+    },
+    {
+        name: "文理学部三教手机存放点",
+        location: [30.539065, 114.359862],
+    },
+    {
+        name: "工学部四教手机存放点",
+        location: [30.542968, 114.361725],
+    },
+    {
+        name: "工学部五教手机存放点",
+        location: [30.543076, 114.36302],
+    },
+    {
+        name: "工学部一教手机存放点",
+        location: [30.542968, 114.361725],
+    },
+]

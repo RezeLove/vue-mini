@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="https://cdn.bootcss.com/FileSaver.js/2014-11-29/FileSaver.js"></script>
+
+<body>
+    <input type="button" id="export" value="保存" />
+</body>
+<script>
+    var button = document.getElementById("export");
+    button.addEventListener("click", saveHandler, false);
+    function saveHandler() {
+        const data = [
+            {
+                name: "信息学部一教手机存放点",
+                location: [30.525782, 114.361214],
+            },
+            {
+                name: "信息学部二教手机存放点",
+                location: [30.526292, 114.361794],
+            },
+            {
+                name: "文理学部五教手机存放点",
+                location: [30.53589, 114.362339],
+            },
+            {
+                name: "文理学部四教手机存放点",
+                location: [30.536509, 114.360817],
+            },
+            {
+                name: "文理学部三教手机存放点",
+                location: [30.539065, 114.359862],
+            },
+            {
+                name: "工学部四教手机存放点",
+                location: [30.542968, 114.361725],
+            },
+            {
+                name: "工学部五教手机存放点",
+                location: [30.543076, 114.36302],
+            },
+            {
+                name: "工学部一教手机存放点",
+                location: [30.542968, 114.361725],
+            },
+        ]
+
+        // let data =
+        //     [
+
+        //         { name: '信息学部一教', location: [30.526439, 114.361209] },
+        //         { name: '信息学部二教', location: [30.526499, 114.362084] },
+        //         { name: '文理学部三教', location: [30.539356, 114.359988] },
+        //         { name: '文理学部四教', location: [30.536723, 114.361803] },
+        //         { name: '文理学部五教', location: [30.536153, 114.361421] },
+        //         { name: '工学部一教', location: [30.54405, 114.36222] },
+        //         { name: '工学部四教', location: [30.542963, 114.361012] },
+        //         { name: '工学部五教', location: [30.543079, 114.363535] },
+        //     ]
+        // let data = [
+        //     {
+        //         name: '信息学部一二食堂', location: [30.528415, 114.359338]
+        //     },
+        //     { name: '信息学部三四食堂', location: [30.526957, 114.35861] },
+        //     { name: '桂圆食堂', location: [30.538478, 114.359185] },
+        //     { name: '梅园食堂', location: [30.535787, 114.364615] },
+        //     { name: '田园食堂', location: [30.542127, 114.357649] },
+        //     { name: '工学部一二食堂', location: [30.543116, 114.365856] },
+        //     { name: '工学部三食堂', location: [30.543875, 114.36565] }
+        // ]
+        var content = JSON.stringify(data);
+        var blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        saveAs(blob, "phoneStorage.json");
+    }
+
+</script>
+
+</html>

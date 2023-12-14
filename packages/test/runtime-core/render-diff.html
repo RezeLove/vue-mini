@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { h, render } = Vue
+
+    const vnode = h('div', [
+        h('p', { key: 1 }, 'child1'),
+        h('p', { key: 2 }, 'child2'),
+        h('p', { key: 3 }, 'child3'),
+        h('p', { key: 4 }, 'del4'),
+
+    ])
+
+    render(vnode, document.getElementById('app'))
+    const vnode2 = h('div', [
+        h('p', { key: 3 }, 'child1'),
+        h('p', { key: 1 }, 'child1'),
+        h('p', { key: 5 }, 'new5'),
+        h('p', { key: 2 }, 'child2'),
+    ])
+
+    setTimeout((
+    ) => {
+        render(vnode2, document.getElementById('app'))
+    }, 2000)
+</script>
+
+</html>

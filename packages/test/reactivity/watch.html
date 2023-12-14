@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../vue/dist/vue.js"></script>
+<body>
+    <div id="p1"></div>
+    <div id="p2"></div>
+    <div id="p3"></div>
+</body>
+<script>
+    const {reactive,effect,watch,ref} = Vue
+
+    const obj = reactive({
+        name:'tx',
+        count:1
+    })
+    const name = ref('ytx')
+
+    watch(obj,(newValue)=>{
+        console.log('开始监听reactive')
+        console.log(newValue)
+    })
+    watch(name,(newValue)=>{
+        console.log('开始监听ref')
+        console.log(newValue)
+    })
+    setTimeout(()=>{
+        obj.name='zyh'
+    },1000)
+    name.value='cx'
+</script>
+</html>

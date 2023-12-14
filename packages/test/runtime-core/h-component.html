@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { h } = Vue
+    const component = {
+        render() {
+            return h('div', { key: 1 }, "this is a component")
+        }
+    }
+    const vnode = h(component)
+    console.log(vnode)
+</script>
+
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { h } = Vue
+    const vnode = h('div', {
+        key: 1
+    }, [
+        h('p', 'child1'),
+        h('p', 'child2'),
+        h('p', 'child3')
+    ])
+    console.log(vnode)
+</script>
+
+</html>

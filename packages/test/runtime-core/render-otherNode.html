@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { h, render, Text, Comment, Fragment } = Vue
+    // Text结点
+    // let vnode = h(Text, 'this is text')
+    // render(vnode, document.getElementById('app'))
+    // Comment结点
+    // let comment = h(Comment, 'this is a comment')
+    // render(comment, document.getElementById('app'))
+    // Fragemnt结点
+    let fragment = h(Fragment, [
+        h('div', 'child1'),
+        h('h2', 'child2'),
+        'textnode',
+        h(Text, 'textnode by h'),
+        h(Comment, 'comment')
+    ])
+    render(fragment, document.getElementById('app'))
+</script>
+
+</html>

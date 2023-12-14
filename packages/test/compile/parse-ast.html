@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { compile } = Vue
+    const template = `<div>hello world</div>`
+    const renderFn = compile(template)
+
+    const template2 = `<div><p>123456</p></div>`
+    const renderFn2 = compile(template2)
+</script>
+
+</html>

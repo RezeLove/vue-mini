@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../vue/dist/vue.js"></script>
+<body>
+    <div id="p1"></div>
+    <div id="p2"></div>
+    <div id="p3"></div>
+</body>
+<script>
+    const {reactive,effect,queuePreFlushCb} = Vue
+
+    const obj = reactive({
+        count:1
+    })
+
+    effect(()=>{
+        console.log(obj.count)
+    },{ 
+        // lazy:true,
+        // scheduler:()=>{
+        //     queuePreFlushCb(()=>{
+        //         console.log('这是scheduler')
+        //         console.log(obj.count)
+        //     })
+        // }
+        scheduler:()=>{
+            setTimeout(()=>{
+            console.log(obj.count)
+        },500)
+    }
+    })
+
+    obj.count=2
+    obj.count=3
+    console.log('结束执行')
+
+</script>
+</html>
