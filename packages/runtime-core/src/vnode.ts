@@ -31,6 +31,8 @@ export function createVnode(type: any, props: any, children: any): VNode {
     return createBaseVNode(type, props, children, shapeFlag, key)
 }
 
+export { createVnode as createElementVNode }
+
 function createBaseVNode(type: any, props: object, children: any, shapeFlag: number, key: any) {
     const vnode = {
         __v_isVNode: true,

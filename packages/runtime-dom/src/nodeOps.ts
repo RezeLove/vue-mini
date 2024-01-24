@@ -15,7 +15,6 @@ export const nodeOps = {
         }
     },
     insert(child: Element, parent: Element, anchor?: any): void {
-        console.log(anchor)
         parent.insertBefore(child, anchor)
     },
     // 处理复杂，单独写为一个文件

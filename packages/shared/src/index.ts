@@ -20,6 +20,7 @@ export const isString = (val: unknown) => {
 
 export const extend = (target: object, source: object) => {
     Object.assign(target, source)
+    return target
 }
 
 const onRE = /^on/

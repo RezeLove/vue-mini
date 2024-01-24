@@ -1,8 +1,10 @@
+// @ts-nocheck
 import { ShapeFlags } from "packages/shared/src/shapeFlags"
 import { Fragment, Text, VNode } from "./vnode"
 import { patchProp } from "packages/runtime-dom/src/patchProp"
 import { EMPTY_OBJ, getSequence, isString } from "@vue/shared"
 import { normalizeVnode } from "packages/runtime-dom/src/compomentRenderUtils"
+import { reactive, effect } from "@vue/reactivity"
 
 // 将依赖于浏览器API(如DOM api)抽离成options，具有跨平台的能力
 export interface RendererOptions {
@@ -103,6 +105,7 @@ function baseCreateRenderer(options: RendererOptions) {
                 if (shapeFlag & ShapeFlags.ELEMENT) {
                     processElement(oldVnode, newVnode, container, anchor)
                 } else if (shapeFlag & ShapeFlags.COMPONENT) {
+                    processComponent(oldVnode, newVnode, container, anchor)
                 }
         }
     }
@@ -174,6 +177,141 @@ function baseCreateRenderer(options: RendererOptions) {
             patchElement(oldVnode, newVnode, anchor)
         }
     }
+    // 处理组件
+    const processComponent = (oldVnode, newVnode, container, anchor = null) => {
+        // if (!oldVnode) {
+        //     mountComponent(newVnode, container, anchor)
+        // } else {
+        //     patchComponent(oldVnode, newVnode, anchor)
+        // }
+        mountComponent(newVnode, container, anchor)
+    }
+
+    const mountComponent = (vnode, container, anchor) => {
+        const componentOptions = vnode.type
+        let { render, data, setup, props: propsOption, beforeCreate } = componentOptions
+
+        beforeCreate && beforeCreate()
+
+        const state = data ? reactive(data) : null
+        const [props, attrs] = resolveProps(propsOption, vnode.props)
+        const instance = {
+            state,
+            props: reactive(props),
+            isMounted: false,
+            subTree: null,
+        }
+        const setupContext = { attrs }
+
+        // 调用setup函数 props和setupContex作为参数传入
+        const setupResult = setup ? setup(instance.props, setupContext) : null
+
+        let setupState = null
+
+        //setup返回的是渲染函数
+        if (typeof setupResult === "function") {
+            // 如果本身也有render函数，则会忽略
+            if (render) console.error("setup 函数返回渲染函数，render 选项将被忽略")
+            render = setupResult
+        } else {
+            // setup返回值不是渲染函数
+            setupState = setupResult
+        }
+
+        vnode.component = instance
+        const renderContext = new Proxy(instance, {
+            get(target, key, receiver) {
+                const { state, props } = target
+                if (state && key in state) {
+                    return state[key]
+                } else if (props && key in props) {
+                    return props[key]
+                }
+                // 查看setup返回数据中是否存在
+                else if (setupState && key in setupState) {
+                    return setupState[key]
+                } else {
+                    console.error("不存在")
+                }
+            },
+            set(target, key, value, receiver) {
+                if (state && key in state) {
+                    state[key] = value
+                } else if (props && key in props) {
+                    console.warn(`Attempting to mutate prop "${key}". Props are readonly.`)
+                }
+                // 增加对 setupState 的支持
+                else if (setupState && key in setupState) {
+                    setupState[key] = value
+                } else {
+                    console.error("不存在")
+                }
+            },
+        })
+        effect(() => {
+            const subTree = render.call(renderContext, renderContext)
+            if (!instance.isMounted) {
+                // 挂载
+                mountElement(subTree, container, anchor)
+                instance.isMounted = true
+            } else {
+                // patchComponent(instance.subTree, subTree, anchor)
+                patchElement(instance.subTree, subTree, anchor)
+            }
+            // 更新实例的subtree
+            instance.subTree = subTree
+        })
+    }
+    // 处理组件属性
+    function resolveProps(options, propsData) {
+        const props = {}
+        const attrs = {}
+        for (const key in propsData) {
+            // vnode中的prop在组件中有定义，视为合法的 props
+            if (key in options) {
+                props[key] = propsData[key]
+            }
+            // 否则视为attrs
+            else {
+                attrs[key] = propsData[key]
+            }
+        }
+        return [props, attrs]
+    }
+
+    // 对比props是否发生变化
+    function hasPropsChanged(prevProps, nextProps) {
+        const nextkeys = Object.keys(nextProps)
+        // props的数量变了，有变化
+        if (nextkeys.length !== Object.keys(prevProps).length) {
+            return true
+        }
+        for (let i = 0; i < nextkeys.length; i++) {
+            const key = nextkeys[i]
+            // 存在不一样的，需要变化
+            if (nextProps[key] !== prevProps[key]) return true
+        }
+        return false
+    }
+
+    // patch组件
+    const patchComponent = (n1, n2, anchor) => {
+        const instance = n1.component
+        n2.component = n1.component
+        const { props } = instance
+        console.log(props)
+        // 有变化
+        if (hasPropsChanged(n1.props, n2.props)) {
+            const [newProps] = resolveProps(n2.type.props, n2.props)
+            for (const k in newProps) {
+                props[k] = newProps[k]
+            }
+            for (const k in props) {
+                if (!(k in newProps)) delete props[k]
+            }
+        }
+    }
+
     // 挂载element
     const mountElement = (vnode: VNode, container: any, anchor = null) => {
         const { type, shapeFlag, props } = vnode
@@ -182,6 +320,9 @@ function baseCreateRenderer(options: RendererOptions) {
         // 2. 挂载子节点
         // 文本
         if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+            setElementText(el, vnode.children)
+        }
+        if (typeof vnode.children == "string") {
             setElementText(el, vnode.children)
         }
         // 3. 设置props

@@ -16,7 +16,10 @@ var Vue = (function (exports) {
     const isString = (val) => {
         return typeof val === "string";
     };
-    const extend = Object.assign;
+    const extend = (target, source) => {
+        Object.assign(target, source);
+        return target;
+    };
     const onRE = /^on/;
     const isOn = (key) => {
         return onRE.test(key);
@@ -282,371 +285,6 @@ var Vue = (function (exports) {
         }
     }
 
-    function createRenderer(options) {
-        return baseCreateRenderer(options);
-    }
-    function baseCreateRenderer(options) {
-        // 从options取出相关函数
-        const { createElement, setElementText, removeChild, insert, createText, setText, createComment, } = options;
-        /**container._vnode
-         *
-         * @param vnode :新vnode
-         * @param container:代挂载的容器
-         */
-        const render = (vnode, container) => {
-            // 新的vnode为空
-            if (!vnode) {
-                // 卸载掉旧vnode
-                if (container._vnode) {
-                    unmount(container._vnode);
-                }
-            }
-            else {
-                patch(container._vnode || null, vnode, container);
-            }
-            // 保存当前的vnode
-            container._vnode = vnode;
-        };
-        const unmount = (vnode) => {
-            // Fragment需要将子节点一一卸载
-            if (vnode.type === Fragment) {
-                vnode.children.forEach((c) => {
-                    unmount(c);
-                    return;
-                });
-            }
-            const el = vnode.el;
-            removeChild(el);
-        };
-        const patch = (oldVnode, newVnode, container, anchor = null) => {
-            oldVnode = oldVnode ? oldVnode : container._vnode;
-            if (oldVnode === newVnode) {
-                return;
-            }
-            const { type, shapeFlag } = newVnode;
-            // 如果新旧节点的type不一致，没有打补丁的必要
-            if (oldVnode && oldVnode.type !== type) {
-                unmount(oldVnode);
-                // 卸载后记得将oldVnode置空
-                oldVnode = null;
-            }
-            // 判断新结点类型
-            switch (type) {
-                case Text$1:
-                    processText(oldVnode, newVnode, container, anchor);
-                    break;
-                case Comment:
-                    processComment(oldVnode, newVnode, container, anchor);
-                    break;
-                case Fragment:
-                    // 对于Fragment类型的vnode来说,它的children存储的内容就是模板中所有根节点，因此在挂载和卸载时，只需要考虑子节点
-                    processFragment(oldVnode, newVnode, container, anchor);
-                    break;
-                default:
-                    if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
-                        processElement(oldVnode, newVnode, container, anchor);
-                    }
-            }
-        };
-        const processComment = (oldVnode, newVnode, container, anchor = null) => {
-            if (!oldVnode) {
-                newVnode.el = createComment(newVnode === null || newVnode === void 0 ? void 0 : newVnode.children);
-                insert(newVnode === null || newVnode === void 0 ? void 0 : newVnode.el, container);
-            }
-            else {
-                const el = oldVnode.el;
-                newVnode.el = el;
-                if (newVnode.children !== oldVnode.children) {
-                    // @ts-ignore
-                    setText(el, newVnode.children);
-                }
-            }
-        };
-        const processText = (oldVnode, newVnode, container, anchor = null) => {
-            if (!oldVnode) {
-                newVnode.el = createText(newVnode === null || newVnode === void 0 ? void 0 : newVnode.children);
-                insert(newVnode === null || newVnode === void 0 ? void 0 : newVnode.el, container);
-            }
-            else {
-                const el = (newVnode.el = oldVnode.el);
-                if (newVnode.children !== oldVnode.children) {
-                    // @ts-ignore
-                    setText(el, newVnode.children);
-                }
-            }
-        };
-        const processFragment = (oldVnode, newVnode, container, anchor = null) => {
-            if (!oldVnode) {
-                newVnode.children.forEach((child) => {
-                    // 因为是挂载的是Fragment的子节点，可能存在纯文本的情况，还需进行统一处理
-                    let childToMount = normalizeVnode(child);
-                    patch(null, childToMount, container, null);
-                });
-            }
-            else {
-                patchChildren(oldVnode, newVnode, container, null);
-            }
-        };
-        const processElement = (oldVnode, newVnode, container, anchor = null) => {
-            if (!oldVnode) {
-                console.log("mount");
-                // 直接挂载
-                mountElement(newVnode, container, anchor);
-            }
-            else {
-                console.log("patch");
-                patchElement(oldVnode, newVnode, anchor);
-            }
-        };
-        // 挂载element
-        const mountElement = (vnode, container, anchor = null) => {
-            const { type, shapeFlag, props } = vnode;
-            // 1. 创建element
-            const el = (vnode.el = createElement(type));
-            // 2. 挂载子节点
-            // 文本
-            if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
-                setElementText(el, vnode.children);
-            }
-            // 3. 设置props
-            if (props) {
-                for (let key in props) {
-                    patchProp(el, key, null, props[key]);
-                }
-            }
-            // 4.挂载到容器
-            insert(el, container, anchor);
-            if (vnode.children) {
-                mountChildren(vnode.children, el, anchor);
-            }
-        };
-        // @ts-ignore
-        const mountChildren = (children, container, anchor) => {
-            if (isString(children)) {
-                children = children.split("");
-            }
-            for (let i = 0; i < children.length; i++) {
-                const child = normalizeVnode(children[i]);
-                patch(null, child, container, anchor);
-            }
-        };
-        // 为element打补丁
-        const patchElement = (oldVnode, newVnode, anchor = null) => {
-            const el = oldVnode.el;
-            newVnode.el = el;
-            const oldProps = oldVnode.props || EMPTY_OBJ;
-            const newProps = newVnode.props || EMPTY_OBJ;
-            // 更新子节点
-            patchChildren(oldVnode, newVnode, el, anchor);
-            // 更新属性
-            patchProps(el, newVnode, oldProps, newProps);
-        };
-        // 子节点更新
-        const patchChildren = (oldVnode, newVnode, container, anchor = null) => {
-            // 短路运算符 前面为true，取后面的值；前面为false，则取false
-            const oldchild = oldVnode && oldVnode.children;
-            const newchild = newVnode && newVnode.children;
-            // 实际上执行到patchElement时，oldVnode和newVnode都是存在的
-            const prevShapeflag = oldVnode.shapeFlag;
-            const { shapeFlag } = newVnode;
-            // 子节点有三种类型：空、文本、数组；新旧组合共有9种情况
-            // 新子节点为文本
-            if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
-                // 如果不是array或者为空，直接修改文本值即可
-                if (oldchild !== newchild) {
-                    setElementText(container, newchild);
-                }
-            }
-            // 新子节点为array
-            else if (shapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
-                // 旧子节点也为array
-                if (prevShapeflag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
-                    // diff算法进行更新
-                    patchKeyedChildren(oldchild, newchild, oldVnode.el);
-                }
-                else {
-                    // 那么旧子节点就为text或空，统一置空再重新挂载
-                    setElementText(container, "");
-                    newchild.forEach((child) => {
-                        mountElement(child, container, null);
-                    });
-                }
-            }
-            // 新子节点不存在
-            else {
-                // 旧子节点为数组
-                if (prevShapeflag & 16 /* ShapeFlags.ARRAY_CHILDREN */) ;
-                else {
-                    setElementText(container, "");
-                }
-            }
-        };
-        const patchKeyedChildren = (oldChildren, newChildren, container) => {
-            console.log("patchKeyedChildren");
-            let j = 0;
-            let oldVNode = oldChildren[j];
-            let newVNode = newChildren[j];
-            while (oldVNode.key === newVNode.key) {
-                patch(oldVNode, newVNode, container);
-                j++;
-                console.log(newVNode.key);
-                oldVNode = oldChildren[j];
-                newVNode = newChildren[j];
-            }
-            let oldEnd = oldChildren.length - 1;
-            let newEnd = newChildren.length - 1;
-            oldVNode = oldChildren[oldEnd];
-            newVNode = newChildren[newEnd];
-            while (oldVNode.key === newVNode.key) {
-                patch(oldVNode, newVNode, container);
-                console.log(newVNode.key);
-                oldEnd--;
-                newEnd--;
-                oldVNode = oldChildren[oldEnd];
-                newVNode = newChildren[newEnd];
-            }
-            if (j > oldEnd && j <= newEnd) {
-                const anchorIndex = newEnd + 1;
-                const anchor = anchorIndex < newChildren.length ? newChildren[anchorIndex].el : null;
-                console.log("mountnew");
-                while (j <= newEnd) {
-                    patch(null, newChildren[j++], container, anchor);
-                }
-            }
-            else if (j > newEnd && j <= oldEnd) {
-                console.log("unmount,old");
-                while (j <= oldEnd) {
-                    unmount(oldChildren[j++]);
-                }
-            }
-            else {
-                const count = newEnd - j + 1;
-                const source = new Array(count);
-                source.fill(-1);
-                const oldStart = j;
-                const newStart = j;
-                let moved = false;
-                let pos = 0;
-                const keyIndex = {};
-                for (let i = newStart; i <= newEnd; i++) {
-                    // @ts-ignore
-                    keyIndex[newChildren[i].key] = i;
-                }
-                let patched = 0;
-                for (let i = oldStart; i <= oldEnd; i++) {
-                    oldVNode = oldChildren[i];
-                    if (patched < count) {
-                        // @ts-ignore
-                        const k = keyIndex[oldVNode.key];
-                        if (typeof k !== "undefined") {
-                            newVNode = newChildren[k];
-                            patch(oldVNode, newVNode, container);
-                            patched++;
-                            source[k - newStart] = i;
-                            if (k < pos) {
-                                moved = true;
-                            }
-                            else {
-                                pos = k;
-                            }
-                        }
-                        else {
-                            unmount(oldVNode);
-                        }
-                    }
-                    else {
-                        unmount(oldVNode);
-                    }
-                }
-                console.log("end");
-                if (moved) {
-                    console.log("moved");
-                    const seq = getSequence(source);
-                    seq.length - 1;
-                    let i = count - 1;
-                    for (i; i >= 0; i--) {
-                        if (source[i] === -1) {
-                            const pos = i + newStart;
-                            const newVNode = newChildren[pos];
-                            const nextPos = pos + 1;
-                            const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null;
-                            patch(null, newVNode, container, anchor);
-                        }
-                        else if (i !== seq[j]) {
-                            const pos = i + newStart;
-                            const newVNode = newChildren[pos];
-                            const nextPos = pos + 1;
-                            const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null;
-                            insert(newVNode.el, container, anchor);
-                        }
-                        else ;
-                    }
-                }
-            }
-        };
-        // 更新属性
-        const patchProps = (el, vnode, oldprops, newprops) => {
-            if (oldprops !== newprops) {
-                // 先循环newprops
-                for (let key in newprops) {
-                    if (newprops[key] !== oldprops[key]) {
-                        patchProp(el, key, oldprops[key], newprops[key]);
-                    }
-                }
-                // 再循环oldprops 将不需要的属性卸载
-                for (let key in oldprops) {
-                    if (!(key in newprops)) {
-                        patchProp(el, key, oldprops[key], null);
-                    }
-                }
-            }
-        };
-        return {
-            render,
-        };
-    }
-
-    const doc = document;
-    const nodeOps = {
-        createElement(type) {
-            return doc.createElement(type);
-        },
-        setElementText(node, text) {
-            node.textContent = text;
-        },
-        removeChild(el) {
-            const parent = el.parentNode;
-            if (parent) {
-                parent.removeChild(el);
-            }
-        },
-        insert(child, parent, anchor) {
-            console.log(anchor);
-            parent.insertBefore(child, anchor);
-        },
-        // 处理复杂，单独写为一个文件
-        patchProp,
-        createText(text) {
-            const el = doc.createTextNode(text);
-            return el;
-        },
-        createComment(text) {
-            const el = doc.createComment(text);
-            return el;
-        },
-        setText(el, text) {
-            el.nodeValue = text;
-        },
-    };
-
-    // @ts-nocheck
-    function ensureRenderer() {
-        return createRenderer(nodeOps);
-    }
-    const render = (...args) => {
-        ensureRenderer().render(...args);
-    };
-
     // ?表示不一定存在
     const createDep = (effects) => {
         return new Set(effects);
@@ -864,6 +502,477 @@ var Vue = (function (exports) {
         }
     }
 
+    function createRenderer(options) {
+        return baseCreateRenderer(options);
+    }
+    function baseCreateRenderer(options) {
+        // 从options取出相关函数
+        const { createElement, setElementText, removeChild, insert, createText, setText, createComment, } = options;
+        /**container._vnode
+         *
+         * @param vnode :新vnode
+         * @param container:代挂载的容器
+         */
+        const render = (vnode, container) => {
+            // 新的vnode为空
+            if (!vnode) {
+                // 卸载掉旧vnode
+                if (container._vnode) {
+                    unmount(container._vnode);
+                }
+            }
+            else {
+                patch(container._vnode || null, vnode, container);
+            }
+            // 保存当前的vnode
+            container._vnode = vnode;
+        };
+        const unmount = (vnode) => {
+            // Fragment需要将子节点一一卸载
+            if (vnode.type === Fragment) {
+                vnode.children.forEach((c) => {
+                    unmount(c);
+                    return;
+                });
+            }
+            const el = vnode.el;
+            removeChild(el);
+        };
+        const patch = (oldVnode, newVnode, container, anchor = null) => {
+            oldVnode = oldVnode ? oldVnode : container._vnode;
+            if (oldVnode === newVnode) {
+                return;
+            }
+            const { type, shapeFlag } = newVnode;
+            // 如果新旧节点的type不一致，没有打补丁的必要
+            if (oldVnode && oldVnode.type !== type) {
+                unmount(oldVnode);
+                // 卸载后记得将oldVnode置空
+                oldVnode = null;
+            }
+            // 判断新结点类型
+            switch (type) {
+                case Text$1:
+                    processText(oldVnode, newVnode, container, anchor);
+                    break;
+                case Comment:
+                    processComment(oldVnode, newVnode, container, anchor);
+                    break;
+                case Fragment:
+                    // 对于Fragment类型的vnode来说,它的children存储的内容就是模板中所有根节点，因此在挂载和卸载时，只需要考虑子节点
+                    processFragment(oldVnode, newVnode, container, anchor);
+                    break;
+                default:
+                    if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
+                        processElement(oldVnode, newVnode, container, anchor);
+                    }
+                    else if (shapeFlag & 6 /* ShapeFlags.COMPONENT */) {
+                        processComponent(oldVnode, newVnode, container, anchor);
+                    }
+            }
+        };
+        const processComment = (oldVnode, newVnode, container, anchor = null) => {
+            if (!oldVnode) {
+                newVnode.el = createComment(newVnode === null || newVnode === void 0 ? void 0 : newVnode.children);
+                insert(newVnode === null || newVnode === void 0 ? void 0 : newVnode.el, container);
+            }
+            else {
+                const el = oldVnode.el;
+                newVnode.el = el;
+                if (newVnode.children !== oldVnode.children) {
+                    // @ts-ignore
+                    setText(el, newVnode.children);
+                }
+            }
+        };
+        const processText = (oldVnode, newVnode, container, anchor = null) => {
+            if (!oldVnode) {
+                newVnode.el = createText(newVnode === null || newVnode === void 0 ? void 0 : newVnode.children);
+                insert(newVnode === null || newVnode === void 0 ? void 0 : newVnode.el, container);
+            }
+            else {
+                const el = (newVnode.el = oldVnode.el);
+                if (newVnode.children !== oldVnode.children) {
+                    // @ts-ignore
+                    setText(el, newVnode.children);
+                }
+            }
+        };
+        const processFragment = (oldVnode, newVnode, container, anchor = null) => {
+            if (!oldVnode) {
+                newVnode.children.forEach((child) => {
+                    // 因为是挂载的是Fragment的子节点，可能存在纯文本的情况，还需进行统一处理
+                    let childToMount = normalizeVnode(child);
+                    patch(null, childToMount, container, null);
+                });
+            }
+            else {
+                patchChildren(oldVnode, newVnode, container, null);
+            }
+        };
+        const processElement = (oldVnode, newVnode, container, anchor = null) => {
+            if (!oldVnode) {
+                console.log("mount");
+                // 直接挂载
+                mountElement(newVnode, container, anchor);
+            }
+            else {
+                console.log("patch");
+                patchElement(oldVnode, newVnode, anchor);
+            }
+        };
+        // 处理组件
+        const processComponent = (oldVnode, newVnode, container, anchor = null) => {
+            // if (!oldVnode) {
+            //     mountComponent(newVnode, container, anchor)
+            // } else {
+            //     patchComponent(oldVnode, newVnode, anchor)
+            // }
+            mountComponent(newVnode, container, anchor);
+        };
+        const mountComponent = (vnode, container, anchor) => {
+            const componentOptions = vnode.type;
+            let { render, data, setup, props: propsOption, beforeCreate } = componentOptions;
+            beforeCreate && beforeCreate();
+            const state = data ? reactive(data) : null;
+            const [props, attrs] = resolveProps(propsOption, vnode.props);
+            const instance = {
+                state,
+                props: reactive(props),
+                isMounted: false,
+                subTree: null,
+            };
+            const setupContext = { attrs };
+            // 调用setup函数 props和setupContex作为参数传入
+            const setupResult = setup ? setup(instance.props, setupContext) : null;
+            let setupState = null;
+            //setup返回的是渲染函数
+            if (typeof setupResult === "function") {
+                // 如果本身也有render函数，则会忽略
+                if (render)
+                    console.error("setup 函数返回渲染函数，render 选项将被忽略");
+                render = setupResult;
+            }
+            else {
+                // setup返回值不是渲染函数
+                setupState = setupResult;
+            }
+            vnode.component = instance;
+            const renderContext = new Proxy(instance, {
+                get(target, key, receiver) {
+                    const { state, props } = target;
+                    if (state && key in state) {
+                        return state[key];
+                    }
+                    else if (props && key in props) {
+                        return props[key];
+                    }
+                    // 查看setup返回数据中是否存在
+                    else if (setupState && key in setupState) {
+                        return setupState[key];
+                    }
+                    else {
+                        console.error("不存在");
+                    }
+                },
+                set(target, key, value, receiver) {
+                    if (state && key in state) {
+                        state[key] = value;
+                    }
+                    else if (props && key in props) {
+                        console.warn(`Attempting to mutate prop "${key}". Props are readonly.`);
+                    }
+                    // 增加对 setupState 的支持
+                    else if (setupState && key in setupState) {
+                        setupState[key] = value;
+                    }
+                    else {
+                        console.error("不存在");
+                    }
+                },
+            });
+            effect(() => {
+                const subTree = render.call(renderContext, renderContext);
+                if (!instance.isMounted) {
+                    // 挂载
+                    mountElement(subTree, container, anchor);
+                    instance.isMounted = true;
+                }
+                else {
+                    // patchComponent(instance.subTree, subTree, anchor)
+                    patchElement(instance.subTree, subTree, anchor);
+                }
+                // 更新实例的subtree
+                instance.subTree = subTree;
+            });
+        };
+        // 处理组件属性
+        function resolveProps(options, propsData) {
+            const props = {};
+            const attrs = {};
+            for (const key in propsData) {
+                // vnode中的prop在组件中有定义，视为合法的 props
+                if (key in options) {
+                    props[key] = propsData[key];
+                }
+                // 否则视为attrs
+                else {
+                    attrs[key] = propsData[key];
+                }
+            }
+            return [props, attrs];
+        }
+        // 挂载element
+        const mountElement = (vnode, container, anchor = null) => {
+            const { type, shapeFlag, props } = vnode;
+            // 1. 创建element
+            const el = (vnode.el = createElement(type));
+            // 2. 挂载子节点
+            // 文本
+            if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
+                setElementText(el, vnode.children);
+            }
+            if (typeof vnode.children == "string") {
+                setElementText(el, vnode.children);
+            }
+            // 3. 设置props
+            if (props) {
+                for (let key in props) {
+                    patchProp(el, key, null, props[key]);
+                }
+            }
+            // 4.挂载到容器
+            insert(el, container, anchor);
+            if (vnode.children) {
+                mountChildren(vnode.children, el, anchor);
+            }
+        };
+        // @ts-ignore
+        const mountChildren = (children, container, anchor) => {
+            if (isString(children)) {
+                children = children.split("");
+            }
+            for (let i = 0; i < children.length; i++) {
+                const child = normalizeVnode(children[i]);
+                patch(null, child, container, anchor);
+            }
+        };
+        // 为element打补丁
+        const patchElement = (oldVnode, newVnode, anchor = null) => {
+            const el = oldVnode.el;
+            newVnode.el = el;
+            const oldProps = oldVnode.props || EMPTY_OBJ;
+            const newProps = newVnode.props || EMPTY_OBJ;
+            // 更新子节点
+            patchChildren(oldVnode, newVnode, el, anchor);
+            // 更新属性
+            patchProps(el, newVnode, oldProps, newProps);
+        };
+        // 子节点更新
+        const patchChildren = (oldVnode, newVnode, container, anchor = null) => {
+            // 短路运算符 前面为true，取后面的值；前面为false，则取false
+            const oldchild = oldVnode && oldVnode.children;
+            const newchild = newVnode && newVnode.children;
+            // 实际上执行到patchElement时，oldVnode和newVnode都是存在的
+            const prevShapeflag = oldVnode.shapeFlag;
+            const { shapeFlag } = newVnode;
+            // 子节点有三种类型：空、文本、数组；新旧组合共有9种情况
+            // 新子节点为文本
+            if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
+                // 如果不是array或者为空，直接修改文本值即可
+                if (oldchild !== newchild) {
+                    setElementText(container, newchild);
+                }
+            }
+            // 新子节点为array
+            else if (shapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
+                // 旧子节点也为array
+                if (prevShapeflag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
+                    // diff算法进行更新
+                    patchKeyedChildren(oldchild, newchild, oldVnode.el);
+                }
+                else {
+                    // 那么旧子节点就为text或空，统一置空再重新挂载
+                    setElementText(container, "");
+                    newchild.forEach((child) => {
+                        mountElement(child, container, null);
+                    });
+                }
+            }
+            // 新子节点不存在
+            else {
+                // 旧子节点为数组
+                if (prevShapeflag & 16 /* ShapeFlags.ARRAY_CHILDREN */) ;
+                else {
+                    setElementText(container, "");
+                }
+            }
+        };
+        const patchKeyedChildren = (oldChildren, newChildren, container) => {
+            console.log("patchKeyedChildren");
+            let j = 0;
+            let oldVNode = oldChildren[j];
+            let newVNode = newChildren[j];
+            while (oldVNode.key === newVNode.key) {
+                patch(oldVNode, newVNode, container);
+                j++;
+                console.log(newVNode.key);
+                oldVNode = oldChildren[j];
+                newVNode = newChildren[j];
+            }
+            let oldEnd = oldChildren.length - 1;
+            let newEnd = newChildren.length - 1;
+            oldVNode = oldChildren[oldEnd];
+            newVNode = newChildren[newEnd];
+            while (oldVNode.key === newVNode.key) {
+                patch(oldVNode, newVNode, container);
+                console.log(newVNode.key);
+                oldEnd--;
+                newEnd--;
+                oldVNode = oldChildren[oldEnd];
+                newVNode = newChildren[newEnd];
+            }
+            if (j > oldEnd && j <= newEnd) {
+                const anchorIndex = newEnd + 1;
+                const anchor = anchorIndex < newChildren.length ? newChildren[anchorIndex].el : null;
+                console.log("mountnew");
+                while (j <= newEnd) {
+                    patch(null, newChildren[j++], container, anchor);
+                }
+            }
+            else if (j > newEnd && j <= oldEnd) {
+                console.log("unmount,old");
+                while (j <= oldEnd) {
+                    unmount(oldChildren[j++]);
+                }
+            }
+            else {
+                const count = newEnd - j + 1;
+                const source = new Array(count);
+                source.fill(-1);
+                const oldStart = j;
+                const newStart = j;
+                let moved = false;
+                let pos = 0;
+                const keyIndex = {};
+                for (let i = newStart; i <= newEnd; i++) {
+                    // @ts-ignore
+                    keyIndex[newChildren[i].key] = i;
+                }
+                let patched = 0;
+                for (let i = oldStart; i <= oldEnd; i++) {
+                    oldVNode = oldChildren[i];
+                    if (patched < count) {
+                        // @ts-ignore
+                        const k = keyIndex[oldVNode.key];
+                        if (typeof k !== "undefined") {
+                            newVNode = newChildren[k];
+                            patch(oldVNode, newVNode, container);
+                            patched++;
+                            source[k - newStart] = i;
+                            if (k < pos) {
+                                moved = true;
+                            }
+                            else {
+                                pos = k;
+                            }
+                        }
+                        else {
+                            unmount(oldVNode);
+                        }
+                    }
+                    else {
+                        unmount(oldVNode);
+                    }
+                }
+                console.log("end");
+                if (moved) {
+                    console.log("moved");
+                    const seq = getSequence(source);
+                    seq.length - 1;
+                    let i = count - 1;
+                    for (i; i >= 0; i--) {
+                        if (source[i] === -1) {
+                            const pos = i + newStart;
+                            const newVNode = newChildren[pos];
+                            const nextPos = pos + 1;
+                            const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null;
+                            patch(null, newVNode, container, anchor);
+                        }
+                        else if (i !== seq[j]) {
+                            const pos = i + newStart;
+                            const newVNode = newChildren[pos];
+                            const nextPos = pos + 1;
+                            const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null;
+                            insert(newVNode.el, container, anchor);
+                        }
+                        else ;
+                    }
+                }
+            }
+        };
+        // 更新属性
+        const patchProps = (el, vnode, oldprops, newprops) => {
+            if (oldprops !== newprops) {
+                // 先循环newprops
+                for (let key in newprops) {
+                    if (newprops[key] !== oldprops[key]) {
+                        patchProp(el, key, oldprops[key], newprops[key]);
+                    }
+                }
+                // 再循环oldprops 将不需要的属性卸载
+                for (let key in oldprops) {
+                    if (!(key in newprops)) {
+                        patchProp(el, key, oldprops[key], null);
+                    }
+                }
+            }
+        };
+        return {
+            render,
+        };
+    }
+
+    const doc = document;
+    const nodeOps = {
+        createElement(type) {
+            return doc.createElement(type);
+        },
+        setElementText(node, text) {
+            node.textContent = text;
+        },
+        removeChild(el) {
+            const parent = el.parentNode;
+            if (parent) {
+                parent.removeChild(el);
+            }
+        },
+        insert(child, parent, anchor) {
+            parent.insertBefore(child, anchor);
+        },
+        // 处理复杂，单独写为一个文件
+        patchProp,
+        createText(text) {
+            const el = doc.createTextNode(text);
+            return el;
+        },
+        createComment(text) {
+            const el = doc.createComment(text);
+            return el;
+        },
+        setText(el, text) {
+            el.nodeValue = text;
+        },
+    };
+
+    // @ts-nocheck
+    function ensureRenderer() {
+        return createRenderer(nodeOps);
+    }
+    const render = (...args) => {
+        ensureRenderer().render(...args);
+    };
+
     let isFlushPending = false;
     // 生成一个Promise对象
     const resolvedPromise = Promise.resolve();
@@ -1028,6 +1137,174 @@ var Vue = (function (exports) {
         }
     }
 
+    const CREATE_ELEMENT_VNODE = Symbol("createElementVNode");
+    const CREATE_VNODE = Symbol("createVNode");
+    const helperNameMap = {
+        [CREATE_ELEMENT_VNODE]: "createElementVNode",
+        [CREATE_VNODE]: "createVNode",
+    };
+
+    // 创建context对象
+    function createCodegenContext(ast) {
+        const context = {
+            // 保存最终拼接的渲染函数
+            code: "",
+            runtimeGlobalName: "Vue",
+            source: ast.loc.source,
+            // 缩放级别,初始为0，没有缩进
+            indentLevel: 0,
+            isSSR: false,
+            helper(key) {
+                return `_${helperNameMap[key]}`;
+            },
+            // 拼接字符串
+            push(code) {
+                context.code += code;
+            },
+            // 换行
+            newline() {
+                context.code += "\n" + `  `.repeat(context.indentLevel);
+            },
+            // 缩进
+            indent() {
+                context.indentLevel++;
+                context.newline();
+            },
+            // 取消缩进
+            deindent() {
+                context.indentLevel--;
+                context.newline();
+            },
+        };
+        return context;
+    }
+    function genFunctionPreamble(context) {
+        const { push, newline, indent, deindent, runtimeGlobalName } = context;
+        const VueBinding = runtimeGlobalName;
+        push(`const _Vue = ${VueBinding}\n`);
+        newline();
+        push(`return  `);
+    }
+    const aliasHelper = (s) => `${helperNameMap[s]}:_${helperNameMap[s]}`;
+    function genNode(node, context) {
+        /**
+         * 处理三种场景：
+         * 1. text
+         * 2.
+         * 3.
+         */
+        switch (node.type) {
+            case 13 /* NodeTypes.VNODE_CALL */:
+                genVNodeCall(node, context);
+                break;
+            case 2 /* NodeTypes.TEXT */:
+                genText(node, context);
+                break;
+        }
+    }
+    function genText(node, context) {
+        context.push(JSON.stringify(node.content), node);
+    }
+    function genVNodeCall(node, context) {
+        const { push, helper } = context;
+        const { tag, props, children, patchFlag, dynamicProps, directives, isBlock, disableTracking, isComponent, } = node;
+        // helper对应的key
+        const callHelper = getVNodeHelper(context.isSSR, isComponent);
+        // 构建：_createElementVNode(
+        push(helper(callHelper) + `(`);
+        // 构建_createElementVNode的参数（h函数需要）
+        const args = genNullableArgs([tag, props, children, patchFlag, dynamicProps]);
+        genNodeList(args, context);
+        push(`)`);
+    }
+    function getVNodeHelper(ssr, isComponent) {
+        return ssr || isComponent ? CREATE_VNODE : CREATE_ELEMENT_VNODE;
+    }
+    // 对传入的参数作预处理
+    function genNullableArgs(args) {
+        let i = args.length;
+        while (i--) {
+            if (args[i] != null) {
+                break;
+            }
+        }
+        return args.slice(0, i + 1).map(arg => arg || `null`);
+    }
+    function genNodeList(nodes, context) {
+        const { push, newline } = context;
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (isString(node)) {
+                push(node);
+            }
+            // 数组需要加上[]
+            else if (isArray(node)) {
+                genNodeListAsArray(node, context);
+            }
+            // 对象
+            else {
+                genNode(node, context);
+            }
+            // ,分割参数
+            if (i < nodes.length - 1) {
+                push(`,`);
+            }
+        }
+    }
+    function genNodeListAsArray(nodes, context) {
+        context.push("[");
+        // 递归处理，遍历nodes进行处理
+        genNodeList(nodes, context);
+        context.push("]");
+    }
+    function generate(ast) {
+        // 1.  创建context上下文，保存最终生成的渲染函数，以及拼接字符串、格式代码用到的函数(换行、缩进等)
+        const context = createCodegenContext(ast);
+        /**
+         * 目标格式：
+         * const _Vue = Vue
+         *
+         * return function render(_ctx,_cache){
+         *  const {createElementVNode:_createElementVNode} = _Vue
+         *  return _createElementVNode("div",[],["hello world"])
+         * }
+         */
+        const { push, newline, indent, deindent } = context;
+        // 函数前序
+        genFunctionPreamble(context);
+        // 开始生成render渲染函数
+        const functionName = `render`;
+        const args = ["_ctx", "_cache"];
+        // 拼接函数的参数
+        const signature = args.join(",");
+        push(`function ${functionName}(${signature}){`);
+        // 换行+缩进
+        indent();
+        const hasHelpers = ast.helpers.length > 0;
+        // 构建：const {createElementVNode:_createElementVNode} = _Vue
+        if (hasHelpers) {
+            push(`const {${ast.helpers.map(aliasHelper).join(",")}} = _Vue   `);
+            push("\n");
+            newline();
+        }
+        newline();
+        push(`return `);
+        // 构建:_createElementVNode("div",[],["hello world"])
+        if (ast.codegenNode) {
+            genNode(ast.codegenNode, context);
+        }
+        else {
+            push(`null`);
+        }
+        // 最后加上'}'
+        deindent();
+        push("}");
+        return {
+            ast,
+            code: context.code,
+        };
+    }
+
     function createParserContext(content) {
         return {
             source: content,
@@ -1142,21 +1419,210 @@ var Vue = (function (exports) {
         context.source = source.slice(numberOfCharacters);
     }
 
-    function baseComplie(template, options) {
+    function isSingleElementRoot(root, child) {
+        const { children } = root;
+        // 单个根节点且是element类型
+        return children.length === 1 && child.type === 1 /* NodeTypes.ELEMENT */;
+    }
+
+    // root-ast
+    function transform(root, options) {
+        // 生成context
+        const context = createTransformContext(root, options);
+        // 遍历转化节点
+        traverseNode(root, context);
+        createRootCodegen(root);
+        root.helpers = [...context.helpers.keys()];
+        root.components = [];
+        root.directives = [];
+        root.imports = [];
+        root.hoists = [];
+        root.temps = [];
+        root.cached = [];
+    }
+    function createTransformContext(root, { nodeTransforms = [] }) {
+        const context = {
+            nodeTransforms,
+            root,
+            helpers: new Map(),
+            currentNode: root,
+            parent: null,
+            childIndex: 0,
+            helper(name) {
+                const count = context.helpers.get(name) || 0;
+                context.helpers.set(name, count + 1);
+                return name;
+            },
+        };
+        return context;
+    }
+    function traverseNode(node, context) {
+        /**
+         * 深度优先 子->父进行转化
+         * 1.进入阶段：存储所有节点的转化函数（转化为Javascript AST）到exitFns中
+         * 2.退出阶段：执行exitFns中缓存的转化函数，并且倒序执行（栈，后入先出，保证深度优先的执行顺序）
+         */
+        context.currentNode = node;
+        const { nodeTransforms } = context;
+        const exitFns = [];
+        // 进入阶段
+        // 父节点
+        for (let i = 0; i < nodeTransforms.length; i++) {
+            const onExit = nodeTransforms[i](node, context);
+            if (onExit) {
+                exitFns.push(onExit);
+            }
+        }
+        // 处理子节点
+        switch (node.type) {
+            case 1 /* NodeTypes.ELEMENT */:
+            case 0 /* NodeTypes.ROOT */:
+                traverseChildren(node, context);
+                break;
+        }
+        // 退出阶段
+        context.currentNode = node;
+        let i = exitFns.length;
+        // 依次执行保存的函数
+        while (i--) {
+            exitFns[i]();
+        }
+    }
+    function traverseChildren(parent, context) {
+        // @ts-ignore
+        parent.children.forEach((node, index) => {
+            context.parent = parent;
+            context.childIndex = index;
+            // 递归处理子节点
+            traverseNode(node, context);
+        });
+    }
+    function createRootCodegen(root) {
+        const { children } = root;
+        // vue2仅支持单个根节点
+        if (children.length === 1) {
+            const child = children[0];
+            if (isSingleElementRoot(root, child) && child.codegenNode) {
+                root.codegenNode = child.codegenNode;
+            }
+        }
+        // vue3支持多个根节点
+    }
+
+    // @ts-nocheck
+    function createVNodeCall(context, tag, props, children) {
+        if (context) {
+            context.helper(CREATE_ELEMENT_VNODE);
+        }
+        return {
+            type: 13 /* NodeTypes.VNODE_CALL */,
+            tag,
+            props,
+            children,
+        };
+    }
+
+    // @ts-nocheck
+    const transformElement = (node, context) => {
+        return function postTransformElement() {
+            node = context.currentNode;
+            if (node.type !== 1 /* NodeTypes.ELEMENT */) {
+                return;
+            }
+            const { tag } = node;
+            let vnodeTag = `"${tag}"`;
+            let vnodeProps = [];
+            let vnodeChildren = node.children;
+            // 传入h函数所需的参数
+            node.codegenNode = createVNodeCall(context, vnodeTag, vnodeProps, vnodeChildren);
+        };
+    };
+
+    function isText(node) {
+        return node.type === 5 /* NodeTypes.INTERPOLATION */ || node.type === 2 /* NodeTypes.TEXT */;
+    }
+
+    /**
+     *
+     * 将相邻的文本结点和表达式合并
+     * 如：<div>hello{{msg}}</div>，需要拿到msg对应的数据，然后进行拼接 'hello'+"msg"
+     */
+    const transformText = (node, context) => {
+        if (node.type === 0 /* NodeTypes.ROOT */ ||
+            node.type === 1 /* NodeTypes.ELEMENT */ ||
+            node.type === 11 /* NodeTypes.FOR */ ||
+            node.type === 9 /* NodeTypes.IF */) {
+            return () => {
+                const children = node.children;
+                let currentContainer;
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i];
+                    if (isText(child)) {
+                        for (let j = i + 1; j < children.length; j++) {
+                            const next = children[j];
+                            if (isText(next)) {
+                                if (!currentContainer) {
+                                    currentContainer = children[i] = createCompundExpression([child], child.loc);
+                                }
+                                currentContainer.children.push(`+`, next);
+                                children.splice(j, 1);
+                                j--;
+                            }
+                            // 第二个节点不是text，不需要合并
+                            else {
+                                currentContainer = undefined;
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    };
+    function createCompundExpression(children, loc) {
+        return {
+            type: 8 /* NodeTypes.COMPOUND_EXPRESSION */,
+            loc,
+            children,
+        };
+    }
+
+    // @ts-nocheck
+    function baseComplie(template, options = {}) {
         const ast = baseParse(template);
-        console.log(JSON.stringify(ast));
-        return {};
+        transform(
+        // @ts-ignore
+        ast, extend(options, {
+            nodeTransforms: [transformElement, transformText],
+        }));
+        console.log(ast);
+        // console.log(JSON.stringify(ast))
+        /**
+         *javascript AST生成渲染函数,渲染函数的形式如：
+         function render(){
+            return h('div',[h('p','this is a sentence')])
+         }
+         */
+        return generate(ast);
     }
 
     function compile(template) {
-        return baseComplie(template);
+        return baseComplie(template, {});
+    }
+
+    // @ts-nocheck
+    function compileToFunction(template, options) {
+        const { code } = compile(template);
+        const render = new Function(code)();
+        return render;
     }
 
     exports.Comment = Comment$1;
     exports.Fragment = Fragment;
     exports.Text = Text$1;
-    exports.compile = compile;
+    exports.compile = compileToFunction;
     exports.computed = computed;
+    exports.createElementVNode = createVnode;
     exports.effect = effect;
     exports.h = h;
     exports.queuePreFlushCb = queuePreFlushCb;

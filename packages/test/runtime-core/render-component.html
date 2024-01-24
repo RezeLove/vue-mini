@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script src="../../vue/dist/vue.js"></script>
+<script>
+    const { render, createElementVNode, ref } = Vue
+    const component = {
+        props: {
+            foo: ''
+        },
+        setup(props, context) {
+            console.log(context)
+            let data = ref('test')
+            return {
+                data,
+            }
+        },
+        render() {
+            return {
+                type: 'div',
+                children: `this is ${this.data.value}  this is props: ${this.foo}`
+            }
+        }
+    }
+    const mycomponent = createElementVNode(type = component, props = {
+        foo: 'sended props',
+        others: 'other props'
+    })
+    render(mycomponent, document.getElementById('app'))
+
+    setTimeout(() => {
+        const mycomponent = createElementVNode(type = component, props = {
+            foo: 'props has changed',
+            others: 'other props changed'
+        })
+        render(mycomponent, document.getElementById('app'))
+    }, 1000);
+</script>
+
+</html>
